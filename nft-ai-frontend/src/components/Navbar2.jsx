@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 const Navbar2 = () => {
   const location = useLocation();
@@ -50,30 +51,11 @@ const Navbar2 = () => {
 
       {/* Right: Connect Wallet Button */}
       <div className="mr-6">
-        <button
-          className="
+        <ConnectButton
+          showBalance={false}
+          chainStatus="icon"
           
-  px-6
-  py-2
-  rounded-lg
-  bg-[rgba(28,30,43,0.8)]
-  border
-  border-[#40aaff]
-  shadow-[0_2px_24px_0_rgba(64,170,255,0.15)]
-  transition-all
-  duration-200
-  text-white
-  font-semibold
-  hover:bg-[#092134]
-  hover:border-[#53dfff]
-  hover:shadow-[0_3px_40px_0_rgba(83,223,255,0.2)]
-  focus:outline-none
-  focus:ring-2
-  focus:ring-[#40aaff]
-"
-        >
-          Connect Wallet
-        </button>        
+        />
       </div>
     </nav>
   );

@@ -30,7 +30,7 @@ const GeneratePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[rgba(21,21,44,1)] flex flex-col items-center pt-24 px-4">
+    <div className="min-h-screen  bg-[#0f0f1a] flex flex-col items-center pt-24 px-4">
       {/* Headline */}
       <div className="text-center">
         <h1 className="text-4xl sm:text-5xl font-bold text-white mb-2">
