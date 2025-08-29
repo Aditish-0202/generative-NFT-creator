@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import Replicate from 'replicate';
 import dotenv from 'dotenv';
+import fetch from 'node-fetch'; // <-- Add this
 
 dotenv.config();
 
@@ -9,44 +9,37 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Initialize Replicate client
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
-  userAgent: 'https://www.npmjs.com/package/create-replicate',
-});
+// Hugging Face model you want to use (image-to-image or text-to-image, e.g. "runwayml/stable-diffusion-v1-5")
+const HF_MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"; // you can use any other HF model compatible with image-generation
 
-// Model and default input for Stable Diffusion XL (SDXL)
-const model = 'stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc';
-
-// POST API to generate AI image based on prompt
 app.post('/generate-image', async (req, res) => {
-  const prompt = req.body.prompt;
-
-  // Build input parameters (you can add more or pass from frontend)
-  const input = {
-    width: 768,
-    height: 768,
-    prompt: prompt || 'A cyberpunk robot cat, cinematic',
-    refine: 'expert_ensemble_refiner',
-    scheduler: 'K_EULER',
-    lora_scale: 0.6,
-    num_outputs: 1,
-    guidance_scale: 7.5,
-    apply_watermark: false,
-    high_noise_frac: 0.8,
-    negative_prompt: '',
-    prompt_strength: 0.8,
-    num_inference_steps: 25,
-  };
+  const prompt = req.body.prompt || 'A cyberpunk robot cat, cinematic';
 
   try {
-    console.log('Running Replicate model with prompt:', prompt);
-    const output = await replicate.run(model, { input });
-    // output is usually an array of image URLs, return first
-    res.json({ imageUrl: output[0] });
+    // POST request to Hugging Face Inference API
+    const response = await fetch(`https://api-inference.huggingface.co/models/${HF_MODEL_ID}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ inputs: prompt })
+    });
+
+    // Check if successful and content-type
+    if (!response.ok || !response.headers.get('content-type').includes('image')) {
+      const errorBody = await response.text();
+      throw new Error(`Hugging Face API returned error: ${errorBody}`);
+    }
+
+    // The API returns the image as a binary, so we need to send it back as a base64 data URL
+    const imageBuffer = await response.buffer();
+    const imageBase64 = imageBuffer.toString('base64');
+    const imageUrl = `data:image/png;base64,${imageBase64}`;
+    res.json({ imageUrl });
   } catch (error) {
     console.error('AI generation error:', error);
-    res.status(500).json({ error: 'AI generation failed' });
+    res.status(500).json({ error: 'AI generation failed', details: error.message });
   }
 });
 
