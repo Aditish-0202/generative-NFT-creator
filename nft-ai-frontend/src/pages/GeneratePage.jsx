@@ -1,10 +1,45 @@
 import React, { useState } from "react";
 
+import { uploadImageToFilebase } from "../utils/filebaseApi";
+
 const GeneratePage = () => {
   const [prompt, setPrompt] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [minting, setMinting] = useState(false);
+  const [mintError, setMintError] = useState("");
+  const [ipfsUrl, setIpfsUrl] = useState("");
+
+  const handleMint = async () => {
+    setMintError("");
+    setMinting(true);
+    try {
+      // Fetch the image as a Blob from the URL
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+
+      // Convert blob to File (required by form data uploader)
+      const fileName = `nft-image-${Date.now()}.png`;
+      const file = new File([blob], fileName, { type: blob.type });
+
+      // Upload image file to Filebase backend
+      const result = await uploadImageToFilebase(file);
+
+      if (result.success) {
+        const ipfsUrl = `https://ipfs.filebase.io/ipfs/${result.fileName}`; // or get CID from response if different
+        setIpfsUrl(ipfsUrl);
+        console.log("Image uploaded to Filebase IPFS:", ipfsUrl);
+
+        // TODO: Add your minting logic here, passing ipfsUrl as tokenURI
+      } else {
+        throw new Error("Upload failed");
+      }
+    } catch (error) {
+      setMintError("Failed to upload image: " + error.message);
+    }
+    setMinting(false);
+  };
 
   const generateImage = async (e) => {
     e.preventDefault();
@@ -74,9 +109,7 @@ const GeneratePage = () => {
       </form>
 
       {/* Error Message */}
-      {error && (
-        <div className="text-red-400 my-4">{error}</div>
-      )}
+      {error && <div className="text-red-400 my-4">{error}</div>}
 
       {/* Display Generated Image */}
       {imageUrl && (
@@ -94,6 +127,25 @@ const GeneratePage = () => {
           >
             View Full Size
           </a>
+
+          <button
+            onClick={handleMint}
+            disabled={minting}
+            className="
+        mt-4 px-6 py-2 rounded-lg bg-[rgba(28,30,43,0.8)]
+        border border-[#40aaff]
+        shadow-[0_2px_24px_0_rgba(64,170,255,0.15)]
+        transition-all duration-200
+        text-white font-semibold
+        hover:bg-[#092134] hover:border-[#53dfff]
+        hover:shadow-[0_3px_40px_0_rgba(83,223,255,0.2)]
+        focus:outline-none focus:ring-2 focus:ring-[#40aaff]
+      "
+          >
+            {minting ? "Uploading to IPFS..." : "Mint NFT"}
+          </button>
+
+          {mintError && <p className="mt-2 text-red-500">{mintError}</p>}
         </div>
       )}
     </div>
